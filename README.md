@@ -1,5 +1,5 @@
 # Fundgrube-Finder
-Dursucht Fundgruben von Saturn / MediaMarkt nach bestimmten Produkten
+Durchsucht Fundgruben von Saturn / MediaMarkt nach bestimmten Produkten
 
 ## Nutzung
 
