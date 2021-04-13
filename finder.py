@@ -1,6 +1,7 @@
 import requests
 import json
 from rich import print
+from time import sleep
 
 targets = {
     'Saturn': {'id': '602faa04976e373c147b23c9', 'tid': '602faa04976e373c147b23c8',
@@ -25,7 +26,6 @@ targets = {
 }
 
 looking_for = [
-    'Sony Alpha 5000',
     'Sony Alpha 5100',
     'Sony Alpha 6000',
     'Sony Alpha 6100',
@@ -40,23 +40,30 @@ def search_store(brand, store):
     base_url = 'https://squarelovin.com/api/index/get-stream-media/?per_call=1000&page=1&intst=gallery' \
                '&full_display_width=1628&display_width=0&show_images=4&ca=1&pi=1 '
 
-    r = requests.get(f"{base_url}&id={targets[brand]['id']}&tid={targets[brand]['tid']}&tc={store['id']}")
-    if r.status_code == 200:
-        j = json.loads(r.text[9:-2])    # assumes &callback= is missing, which leads to callback=callback
-        items = j['data']
-        print(f"  Parsing {len(items)} items.")
-        for i in items:
-            if len(i['products']) == 0 or 'name' not in i['products'][0]:
-                print("  [red]1 product without information[/red]")
+    error = True
+    while error:
+        try:
+            r = requests.get(f"{base_url}&id={targets[brand]['id']}&tid={targets[brand]['tid']}&tc={store['id']}")
+            if r.status_code == 200:
+                error = False
+                j = json.loads(r.text[9:-2])    # assumes &callback= is missing, which leads to callback=callback
+                items = j['data']
+                print(f"  Parsing {len(items)} items.")
+                for i in items:
+                    if len(i['products']) == 0 or 'name' not in i['products'][0]:
+                        print("  [red]1 product without information[/red]")
+                    else:
+                        for lf in looking_for:
+                            p_name = i['products'][0]['name'].lower()
+                            lf = lf.lower()
+                            if all(sub in p_name for sub in lf.split()):
+                                print("   [green]Found something:[/green]")
+                                print_product(i)
             else:
-                for lf in looking_for:
-                    p_name = i['products'][0]['name'].lower()
-                    lf = lf.lower()
-                    if all(sub in p_name for sub in lf.split()):
-                        print("   [green]Found something:[/green]")
-                        print_product(i)
-    else:
-        print("Something went wrong :(")
+                print("Something went wrong :(")
+        except requests.exceptions.ConnectionError:
+            print("  [orange1]Connection timeout, retrying in 5 seconds.[/orange1]")
+            sleep(5)
 
 
 def print_product(item):
